@@ -45,6 +45,40 @@ public partial class Day04 : BaseDay
 
     private long Part02()
     {
-        return 0;
+        var scratchCards = new int[_input.Length];
+
+        for (var i = 0; i < scratchCards.Length; i++)
+        {
+            scratchCards[i] = 1;
+        }
+        
+        foreach (var (line, index) in _input.Select((l, i) => (l, i)))
+        {
+            var winningNumbers = line
+                .Split('|')[0]
+                .Split(':')[1]
+                .Split(' ')
+                .Where(s => string.IsNullOrWhiteSpace(s) == false)
+                .Select(int.Parse)
+                .ToHashSet();
+            
+            var myNumbers = line
+                .Split('|')[1]
+                .Split(' ')
+                .Where(s => string.IsNullOrWhiteSpace(s) == false)
+                .Select(int.Parse)
+                .ToHashSet();
+            
+            var matches = myNumbers.Intersect(winningNumbers).Count();
+
+            if (matches <= 0) continue;
+            
+            foreach (var i in Enumerable.Range(index + 1, matches))
+            {
+                scratchCards[i] += scratchCards[index];
+            }
+        }
+
+        return scratchCards.Aggregate(0L, (current, scratchCard) => current + scratchCard);
     }
 }

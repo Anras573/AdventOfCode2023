@@ -15,9 +15,9 @@ public partial class Day02 : BaseDay
 
     private int SumOfPossibleGames()
     {
-        var blue = 14;
-        var green = 13;
-        var red = 12;
+        const int blue = 14;
+        const int green = 13;
+        const int red = 12;
 
         var sum = 0;
         
@@ -40,12 +40,14 @@ public partial class Day02 : BaseDay
                     isPossible = false;
                     break;
                 }
-                else if (color is "green" && num > green)
+                
+                if (color is "green" && num > green)
                 {
                     isPossible = false;
                     break;
                 }
-                else if (color is "red" && num > red)
+                
+                if (color is "red" && num > red)
                 { 
                     isPossible = false;
                     break;

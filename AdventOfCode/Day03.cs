@@ -35,8 +35,6 @@ public partial class Day03 : BaseDay
                     x++;
                 }
                 
-                var isPart = true;
-                
                 // Check x-axis
                 if (x - num.Length >= 0 && _input[y][x - num.Length] is not '.')
                 {
@@ -124,9 +122,6 @@ public partial class Day03 : BaseDay
     {
         long sum = 0;
         var (width , height) = (_input[0].Length, _input.Length);
-
-        var nums = new List<int>();
-        var gearsDebug = new List<string>();
 
         for (var y = 0; y < height; y++)
         {
@@ -284,23 +279,13 @@ public partial class Day03 : BaseDay
                     gears.Add(int.Parse(num));
                 }
 
-                if (gears.Count > 1)
-                {
-                    //throw new Exception(string.Join(", ", gears));
-                    var ratio = gears[0];
-                    var num = gears.Skip(1).Aggregate(ratio, (current, gear) => current * gear);
-                    sum += num;
-                    
-                    nums.Add(num);
-                    gearsDebug.Add(string.Join(", ", gears));
-                    
-                    //throw new Exception(sum.ToString());
-                }
+                if (gears.Count <= 1) continue;
                 
+                var ratio = gears[0];
+                var currentSum = gears.Skip(1).Aggregate(ratio, (current, gear) => current * gear);
+                sum += currentSum   ;
             }
         }
- 
-        //throw new Exception(string.Join(Environment.NewLine, gearsDebug));
         
         return sum;
     }

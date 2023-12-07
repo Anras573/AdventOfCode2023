@@ -58,46 +58,79 @@ public partial class Day05 : BaseDay
 
     private long Part02()
     {
-        return 0;
-        
-        var lowestLocation = long.MaxValue;
-
-        var processedSeeds = new HashSet<long>();
- 
-        for(var i = 0; i < Seeds.Count; i += 2)
+        var ranges = new List<Range>();
+        for (var i = 0; i < Seeds.Count; i += 2)
         {
-            for (var seed = Seeds[i]; seed < Seeds[i] + Seeds[i + 1]; seed++)
-            {
-                if (processedSeeds.Contains(seed)) continue;
-                
-                var soil = (from line in SeedsToSoil select line.IsInRange(seed) into l where l.isInRange select l.result).FirstOrDefault(-1L);
-                if (soil == -1L) soil = seed;
-            
-                var fertilizer = (from line in SoilToFertilizer select line.IsInRange(soil) into l where l.isInRange select l.result).FirstOrDefault(-1L);
-                if (fertilizer == -1L) fertilizer = soil;
-            
-                var water = (from line in FertilizerToWater select line.IsInRange(fertilizer) into l where l.isInRange select l.result).FirstOrDefault(-1L);
-                if (water == -1L) water = fertilizer;
-            
-                var light = (from line in WaterToLight select line.IsInRange(water) into l where l.isInRange select l.result).FirstOrDefault(-1L);
-                if (light == -1L) light = water;
-            
-                var temperature = (from line in LightToTemperature select line.IsInRange(light) into l where l.isInRange select l.result).FirstOrDefault(-1L);
-                if (temperature == -1L) temperature = light;
-            
-                var humidity = (from line in TemperatureToHumidity select line.IsInRange(temperature) into l where l.isInRange select l.result).FirstOrDefault(-1L);
-                if (humidity == -1L) humidity = temperature;
-            
-                var location = (from line in HumidityToLocation select line.IsInRange(humidity) into l where l.isInRange select l.result).FirstOrDefault(-1L);
-                if (location == -1L) location = humidity;
-            
-                if (location < lowestLocation) lowestLocation = location;
+            ranges.Add(new Range(Seeds[i], Seeds[i] + Seeds[i + 1] - 1));
+        }
 
-                processedSeeds.Add(seed);
+        var orderedMaps = new List<List<AlmanacRangeLine>>
+        {
+            SeedsToSoil
+                .Select(AlmanacRangeLine.Parse)
+                .OrderBy(s => s.From)
+                .ToList(),
+            SoilToFertilizer
+                .Select(AlmanacRangeLine.Parse)
+                .OrderBy(s => s.From)
+                .ToList(),
+            FertilizerToWater
+                .Select(AlmanacRangeLine.Parse)
+                .OrderBy(s => s.From)
+                .ToList(),
+            WaterToLight
+                .Select(AlmanacRangeLine.Parse)
+                .OrderBy(s => s.From)
+                .ToList(),
+            LightToTemperature
+                .Select(AlmanacRangeLine.Parse)
+                .OrderBy(s => s.From)
+                .ToList(),
+            TemperatureToHumidity
+                .Select(AlmanacRangeLine.Parse)
+                .OrderBy(s => s.From)
+                .ToList(),
+            HumidityToLocation
+                .Select(AlmanacRangeLine.Parse)
+                .OrderBy(s => s.From)
+                .ToList()
+        };
+        
+        foreach (var map in orderedMaps)
+        {
+            var newRanges = new List<Range>();
+            foreach (var range in ranges)
+            {
+                var newRange = range;
+                foreach (var mapping in map)
+                {
+                    if (range.From < mapping.From)
+                    {
+                        newRanges.Add(newRange with { To = Math.Min(newRange.To, mapping.From - 1) });
+                        newRange.From = mapping.From;
+                        
+                        if (newRange.From > newRange.To)
+                            break;
+                    }
+
+                    if (newRange.From <= mapping.To)
+                    {
+                        newRanges.Add(new Range(newRange.From + mapping.Diff, Math.Min(newRange.To, mapping.To) + mapping.Diff));
+                        newRange.From = mapping.To + 1;
+                        
+                        if (newRange.From > newRange.To)
+                            break;
+                    }
+                }
+
+                if (newRange.From <= newRange.To)
+                    newRanges.Add(newRange);
             }
+            
+            ranges = newRanges;
         }
         
-        return lowestLocation; 
+        return ranges.Min(r => r.From);
     }
 
     private void ParseInput()
@@ -162,12 +195,13 @@ public partial class Day05 : BaseDay
         }
     }
     
-    private record AlmanacLine(long Destination, long Source, long Count)
+    private record AlmanacLine(long Destination, long Source, long Count, long Diff)
     {
         public static AlmanacLine Parse(string line)
         {
-            var parts = line.Split(' ');
-            return new AlmanacLine(long.Parse(parts[0]), long.Parse(parts[1]), long.Parse(parts[2]));
+            var parts = line.Split(' ').Select(long.Parse).ToArray();
+            var diff = parts[0] - parts[1];
+            return new AlmanacLine(parts[0], parts[1], parts[2], diff);
         }
         
         public (bool isInRange, long result) IsInRange(long part)
@@ -183,5 +217,13 @@ public partial class Day05 : BaseDay
             
             return (isInRange, result);
         }
-    }   
+    }
+
+    private record struct Range(long From, long To);
+
+    private record AlmanacRangeLine(long From, long To, long Diff)
+    {
+        public static AlmanacRangeLine Parse(AlmanacLine line)
+            => new(line.Source, line.Source + line.Count - 1, line.Diff);
+    }
 }
